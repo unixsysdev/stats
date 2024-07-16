@@ -336,17 +336,21 @@ def counting_sort(arr):
 
 # 16. Radix Sort
 def counting_sort_for_radix(arr, exp):
-    n = len(arr)
-    output = [0] * n
-    count = [0] * 10
+    n = len(arr)  # Get the length of the array
+    output = [0] * n  # Create an output array of the same size as input
+    count = [0] * 10  # Create a count array for digits 0-9
 
+    # Store count of occurrences in count[]
     for i in range(n):
         index = arr[i] // exp
         count[index % 10] += 1
 
+    # Change count[i] so that count[i] now contains actual
+    # position of this digit in output[]
     for i in range(1, 10):
         count[i] += count[i - 1]
 
+    # Build the output array
     i = n - 1
     while i >= 0:
         index = arr[i] // exp
@@ -354,80 +358,116 @@ def counting_sort_for_radix(arr, exp):
         count[index % 10] -= 1
         i -= 1
 
+    # Copy the output array to arr[], so that arr[] now
+    # contains sorted numbers according to current digit
     for i in range(n):
         arr[i] = output[i]
 
 def radix_sort(arr):
-    max_num = max(arr)
-    exp = 1
+    max_num = max(arr)  # Find the maximum number to know number of digits
+    exp = 1  # Initialize exp = 1 for least significant digit
     while max_num // exp > 0:
-        counting_sort_for_radix(arr, exp)
-        exp *= 10
-    return arr
+        counting_sort_for_radix(arr, exp)  # Do counting sort for each digit
+        exp *= 10  # Move to next digit
+    return arr  # Return the sorted array
 
 # 17. Topological Sort
 from collections import defaultdict
 
 def topological_sort(graph):
     def dfs(node):
-        visited.add(node)
-        for neighbor in graph[node]:
-            if neighbor not in visited:
-                dfs(neighbor)
-        stack.append(node)
+        visited.add(node)  # Mark the current node as visited
+        for neighbor in graph[node]:  # Explore all neighbors
+            if neighbor not in visited:  # If neighbor hasn't been visited
+                dfs(neighbor)  # Recursively call DFS on the neighbor
+        stack.append(node)  # After exploring all neighbors, add node to stack
 
-    visited = set()
-    stack = []
-    for node in graph:
-        if node not in visited:
-            dfs(node)
+    visited = set()  # Set to keep track of visited nodes
+    stack = []  # Stack to store the topological order
+    for node in graph:  # Iterate through all nodes in the graph
+        if node not in visited:  # If node hasn't been visited
+            dfs(node)  # Call DFS on the node
     
-    return stack[::-1]
+    return stack[::-1]  # Return the reversed stack (topological order)
 
 # 18. Floyd-Warshall Algorithm
 def floyd_warshall(graph):
-    V = len(graph)
-    dist = [row[:] for row in graph]
+    V = len(graph)  # Number of vertices in the graph
+    dist = [row[:] for row in graph]  # Create a copy of the graph
 
+    # Add all vertices one by one to the set of intermediate vertices
     for k in range(V):
+        # Pick all vertices as source one by one
         for i in range(V):
+            # Pick all vertices as destination for the above source
             for j in range(V):
+                # If vertex k is on the shortest path from i to j,
+                # then update the value of dist[i][j]
                 dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
     
-    return dist
+    return dist  # Return the shortest distance matrix
 
 # 19. Kruskal's Algorithm
 class DisjointSet:
     def __init__(self, vertices):
-        self.parent = {v: v for v in vertices}
-        self.rank = {v: 0 for v in vertices}
+        self.parent = {v: v for v in vertices}  # Each vertex is its own parent initially
+        self.rank = {v: 0 for v in vertices}  # Rank of each vertex is 0 initially
 
     def find(self, item):
-        if self.parent[item] != item:
+        if self.parent[item] != item:  # If item is not the root
+            # Recursively find the root and update parent (path compression)
             self.parent[item] = self.find(self.parent[item])
-        return self.parent[item]
+        return self.parent[item]  # Return the root
 
     def union(self, x, y):
-        xroot = self.find(x)
-        yroot = self.find(y)
+        xroot = self.find(x)  # Find root of x
+        yroot = self.find(y)  # Find root of y
+
+        # Attach smaller rank tree under root of high rank tree
         if self.rank[xroot] < self.rank[yroot]:
             self.parent[xroot] = yroot
         elif self.rank[xroot] > self.rank[yroot]:
             self.parent[yroot] = xroot
         else:
+            # If ranks are same, make one as root and increment its rank
             self.parent[yroot] = xroot
             self.rank[xroot] += 1
 
 def kruskal(graph):
+    # Create a list of all edges in the graph
     edges = [(w, u, v) for u, edges in graph.items() for v, w in edges.items()]
-    edges.sort()
-    vertices = list(graph.keys())
-    ds = DisjointSet(vertices)
-    mst = []
+    edges.sort()  # Sort edges by weight
+    vertices = list(graph.keys())  # Get list of all vertices
+    ds = DisjointSet(vertices)  # Create a disjoint set
+    mst = []  # Initialize minimum spanning tree
 
-    for w, u, v in edges:
-        if ds.find(u) != ds.find(v):
-            ds.union(u, v)
-            mst.append((u, v, w))
+    for w, u, v in edges:  # Iterate through sorted edges
+        if ds.find(u) != ds.find(v):  # If including this edge doesn't form a cycle
+            ds.union(u, v)  # Union the sets
+            mst.append((u, v, w))  # Add the edge to MST
     
-    return mst
+    return mst  # Return the minimum spanning tree
+
+# 20. Bellman-Ford Algorithm
+def bellman_ford(graph, source):
+    # Step 1: Initialize distances from source to all other vertices as INFINITE
+    distances = {vertex: float('infinity') for vertex in graph}
+    distances[source] = 0  # Distance from source to itself is 0
+
+    # Step 2: Relax all edges |V| - 1 times
+    for _ in range(len(graph) - 1):
+        for u in graph:
+            for v, weight in graph[u].items():
+                # If there is a shorter path to v through u
+                if distances[u] != float('infinity') and distances[u] + weight < distances[v]:
+                    distances[v] = distances[u] + weight  # Update distance of v
+
+    # Step 3: Check for negative-weight cycles
+    for u in graph:
+        for v, weight in graph[u].items():
+            # If there is a shorter path, then there is a negative cycle
+            if distances[u] != float('infinity') and distances[u] + weight < distances[v]:
+                print("Graph contains negative weight cycle")
+                return None
+
+    return distances  # Return the shortest distances
